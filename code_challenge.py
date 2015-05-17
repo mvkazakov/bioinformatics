@@ -1,5 +1,8 @@
 import re
 import operator
+import random
+import itertools
+import bisect
 
 bases = ['A', 'C', 'G', 'T']
 
@@ -374,4 +377,118 @@ def Consensus(Profile):
         c = c + m
     return c
 
+def Score(Motifs):
+    """ """
+
+    return DistanceBetweenPatternAndStrings(Consensus(GetProfile(Motifs, True)),
+                                            *Motifs)
+
+def RandomMotifs(k, *Dna):
+    """ """
+    Motifs = []
+    #random.seed()
     
+    for Text in Dna:
+        
+        i = random.choice(range(len(Text) - k + 1))
+        Motifs.append(Text[i:i + k])
+
+    return Motifs
+
+
+
+def RandomizedMotifSearch(k, t, *Dna):
+    """ """
+
+    BestMotifs = RandomMotifs(k, *Dna)
+
+    Motifs = BestMotifs[:]
+    
+    while True:
+
+        Profile = GetProfile(Motifs, True)
+
+        Motifs = []
+
+        for Text in Dna:
+            Motifs.append(MostProbableKmer(Text, k, Profile))
+        #print(Score(Motifs))
+        if Score(Motifs) < Score(BestMotifs):
+            BestMotifs = Motifs[:]
+        else:
+            break
+                          
+    return BestMotifs
+
+def RandomizedMotifSearchTimes(times, k, t, *Dna):
+    return MotifSearchTimes(RandomizedMotifSearch, times, k, t, *Dna)
+
+def GibbsSamplerTimes(times, k, t, N, *Dna):
+    return MotifSearchTimes(GibbsSampler, times, k, t, N, *Dna)
+                          
+def MotifSearchTimes(fun, times, *args):
+    """ """
+
+    result = []
+    
+    for i in range(times):
+        result.append(fun(*args))
+
+    #print(list(map(Score, result)))
+    return min(result, key=Score)
+    #return result
+
+def GibbsSampler(k, t, N, *Dna):
+    """ """
+
+    BestMotifs = RandomMotifs(k, *Dna)
+
+    Motifs = BestMotifs[:]
+#    print(Motifs)
+
+    for j in range(1, N):
+
+        
+        #random.seed()
+        i = random.choice(range(0, len(Motifs)))
+        before = Motifs[0:i]
+        after = Motifs[i + 1:len(Motifs)]
+        Profile = GetProfile(before + after, True)
+
+        Motifs = before + [ProfileRandomlyKmer(Dna[i], k, Profile)] + after
+#        Motifs = before + [MostProbableKmer(Dna[i], k, Profile)] + after
+
+        #print(i)
+        #print(Motifs)
+
+        score = Score(Motifs)
+        bestScore = Score(BestMotifs)
+#        print(score)
+#        print(bestScore)
+        if score < bestScore:
+            BestMotifs = Motifs[:]
+
+    return BestMotifs
+
+
+def Random(P):
+    """ """
+
+    cumdist = list(itertools.accumulate(P))
+    x = random.random() * cumdist[-1]
+
+    return bisect.bisect(cumdist, x)
+
+def ProfileRandomlyKmer(Text, k, Profile):
+    """ """
+
+    P = []
+
+    for i in range(len(Text) - k + 1):
+
+        P = P + [Probability(Text[i:i + k], Profile)]
+
+    i = Random(P)
+    #print(P)
+    #print(i)
+    return Text[i:i + k]

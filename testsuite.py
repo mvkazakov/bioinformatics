@@ -93,5 +93,17 @@ class TestCodeChallenge(unittest.TestCase):
             with self.subTest(p=p):
                 self.assertEqual(*p)
         
+    def test_RandomizedMotifSearch(self):
+        
+        for p in RunFunWithFile(RandomizedMotifSearchTimes, 'RandomizedMotifSearch.txt'):
+            with self.subTest(p=p):
+                self.assertEqual(*p)
+        
+    def test_GibbsSampler(self):
+        
+        for p in RunFunWithFile(GibbsSamplerTimes, 'GibbsSampler.txt'):
+            with self.subTest(p=p):
+                self.assertEqual(*p)
+        
 if __name__ == '__main__':
     unittest.main()
